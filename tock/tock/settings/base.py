@@ -75,6 +75,7 @@ MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'uaa_client.middleware.UaaRefreshMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -121,9 +122,17 @@ UAA_APPROVED_DOMAINS = {
 UAA_CLIENT_ID = env.get_credential('UAA_CLIENT_ID', None)
 UAA_CLIENT_SECRET = env.get_credential('UAA_CLIENT_SECRET', None)
 UAA_AUTH_URL = 'https://login.fr.cloud.gov/oauth/authorize'
-UAA_TOKEN_URL = 'https://uaa.fr.cloud.gov/oauth/token'
+UAA_TOKEN_URL = 'https://uaa.fr.cloud.gov/oauth/token'  # nosec
 UAA_LOGOUT_URL = 'https://login.fr.cloud.gov/logout.do'
 
 AUTO_LOGOUT_DELAY_MINUTES = 60
 
 TOCK_CHANGE_REQUEST_FORM = 'https://docs.google.com/a/gsa.gov/forms/d/1EpVTxXgRNgYfoSA2J8Oi-csjhFKqFm5DT542vIlahpU/viewform?edit_requested=true'
+
+# enable HSTS according to https://cyber.dhs.gov/bod/18-01/
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+RECENT_TOCKS_TO_REPORT = 5
+STARTING_FY_FOR_REPORTS_PAGE = 2019

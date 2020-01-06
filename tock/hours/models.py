@@ -24,51 +24,6 @@ class HolidayPrefills(models.Model):
         unique_together = ['project', 'hours_per_period']
         ordering = ['project__name']
 
-class Targets(models.Model):
-    name = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True
-    )
-    start_date = models.DateField(
-        unique=True
-    )
-    end_date = models.DateField(
-        unique=True
-    )
-    hours_target_cr = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Hours target for cost recovery'
-    )
-    hours_target_plan = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Hours target for financial plan'
-    )
-    revenue_target_cr = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Revenue target for financial plan'
-    )
-    revenue_target_plan = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Revenue target for financial plan',
-    )
-    periods = models.PositiveSmallIntegerField(
-        default=52,
-    )
-    labor_rate = models.PositiveSmallIntegerField(
-        default=1
-    )
-
-    def fiscal_year(self):
-        return ReportingPeriod.get_fiscal_year(self)
-
-    def __str__(self):
-        return '{} (FY{})'.format(self.name, self.fiscal_year())
-
-    class Meta:
-        unique_together = ("start_date", "end_date")
-        verbose_name = 'Target'
-        verbose_name_plural = 'Targets'
 
 class ReportingPeriod(ValidateOnSaveMixin, models.Model):
     USWDS_ALERT_SUCCESS = 'success'
@@ -195,7 +150,7 @@ class ReportingPeriod(ValidateOnSaveMixin, models.Model):
         date.  So in this system, during the week that spans two fiscal years,
         that week will belong to the year if there's more September
         days than October. And more October days means it belongs to next year.
-        i.e. 9/30/2015 is on a Wesnesday, this means it belongs to FY 2015 since
+        i.e. 9/30/2015 is on a Wednesday, this means it belongs to FY 2015 since
         there is more September days that week (Sun to Wed), so the end date
         of FY 2016 is 10/03/2015 (that Sunday) even though it is an October
         day.
@@ -378,7 +333,6 @@ class TimecardObject(models.Model):
         default='',
         help_text='Please provide details about how you spent your time.'
     )
-    submitted = models.BooleanField(default=False)
     revenue_profit_loss_account = models.ForeignKey(
         ProfitLossAccount,
         blank=True,
@@ -418,8 +372,6 @@ class TimecardObject(models.Model):
             self.timecard.user
         )
 
-        self.submitted = self.timecard.submitted
-
         p_pl = self.project.profit_loss_account # Project PL info.
         u_pl = self.timecard.user.user_data.profit_loss_account # User PL info.
         rp = self.timecard.reporting_period # TimecardObject reporting period.
@@ -444,6 +396,21 @@ class TimecardObject(models.Model):
 
         super(TimecardObject, self).save(*args, **kwargs)
 
+
+    def to_csv_row(self):
+        """Output attributes for csv.writer consumption"""
+        return [
+            "{0} - {1}".format(
+                self.timecard.reporting_period.start_date,
+                self.timecard.reporting_period.end_date
+            ),
+            self.timecard.modified.strftime("%Y-%m-%d %H:%M:%S"),
+            self.timecard.user.username,
+            self.project,
+            self.hours_spent,
+            self.timecard.user.user_data.organization_name,
+            self.project.organization_name
+        ]
 
 class TimecardPrefillDataManager(models.Manager):
     def active(self):
